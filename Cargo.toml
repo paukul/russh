@@ -3,4 +3,12 @@ name = "russh"
 version = "0.1.0"
 authors = ["Pascal Friederich <paukul@gmail.com>"]
 
+[lib]
+name = "russh"
+path = "src/lib.rs"
+
+[[bin]]
+name = "russh"
+path = "src/bin.rs"
+
 [dependencies]
