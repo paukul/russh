@@ -32,6 +32,32 @@ enum MSG_TYPE {
     SSH_MSG_NEWKEYS
 }
 
+#[allow(dead_code)]
+struct Packet {
+    packet_length: u32,
+    payload: Vec<u8>,
+    padding: Vec<u8>,
+    mac: Vec<u8>
+}
+
+impl Packet {
+    fn new(buf: &[u8]) -> Packet {
+        let packet_length = BigEndian::read_u32(&buf[0..4]);
+        let padding_length = *&buf[4] as u32;
+        let payload_length = packet_length - padding_length - 1;
+        let last_payload_byte = payload_length - padding_length - 1;
+        let payload = &buf[5..last_payload_byte as usize];
+        trace!("Packet Length: {}", packet_length);
+        trace!("Padding Length: {}", padding_length);
+        Packet {
+            packet_length: packet_length,
+            payload: payload.to_vec(),
+            padding: Vec::new(),
+            mac: Vec::new()
+        }
+    }
+}
+
 impl From<u8> for MSG_TYPE {
     fn from(n: u8) -> Self {
         match n {
@@ -67,15 +93,9 @@ pub fn connect(host: &str, port: u16) -> Result<(), Error> {
 
     let mut buf = [0; MAX_PACKET_SIZE];
     raw_reader.read(&mut buf)?;
-    let packet_length = BigEndian::read_u32(&buf[0..4]);
-    let padding_length = *&buf[4] as u32;
-    let payload_length = packet_length - padding_length - 1;
-    let last_payload_byte = payload_length - padding_length - 1;
-    let payload = &buf[5..last_payload_byte as usize];
-    let msg_type = &payload[0];
-    trace!("Packet Length: {}", packet_length);
-    trace!("Padding Length: {}", padding_length);
-    debug!("Msg type: {:?}", MSG_TYPE::from(*msg_type));
+    let packet = Packet::new(&buf);
+    let msg_type = packet.payload[0];
+    debug!("Msg type: {:?}", MSG_TYPE::from(msg_type));
     Ok(())
 }
 
