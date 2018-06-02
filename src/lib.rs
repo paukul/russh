@@ -1,9 +1,9 @@
 // #[macro_use] extern crate failure;
 extern crate failure;
 extern crate byteorder;
+extern crate hexdump;
 #[macro_use] extern crate log;
 
-use std::io::Cursor;
 use std::io::prelude::*;
 use std::io::BufReader;
 use std::net::TcpStream;
@@ -44,14 +44,14 @@ struct Packet {
 impl Packet {
     fn new(buf: &[u8]) -> Packet {
         let packet_length = BigEndian::read_u32(&buf[0..4]);
-        let padding_length = *&buf[4] as u32;
+        let padding_length = u32::from(buf[4]);
         let payload_length = packet_length - padding_length - 1;
-        let last_payload_byte = payload_length - padding_length - 1;
+        let last_payload_byte = payload_length - padding_length + 4;
         let payload = &buf[5..last_payload_byte as usize];
         trace!("Packet Length: {}", packet_length);
         trace!("Padding Length: {}", padding_length);
         Packet {
-            packet_length: packet_length,
+            packet_length,
             payload: payload.to_vec(),
             padding: Vec::new(),
             mac: Vec::new()
@@ -89,24 +89,65 @@ pub fn connect(host: &str, port: u16) -> Result<(), Error> {
     reader.read_line(&mut buf)?;
     debug!("Server version: {}", buf.trim_right());
 
-    stream.write(format!("{}\r\n", VERSION).as_bytes())?;
+    stream.write_all(format!("{}\r\n", VERSION).as_bytes())?;
     stream.flush()?;
 
     let mut buf = [0; MAX_PACKET_SIZE];
-    raw_reader.read(&mut buf)?;
+    let read = raw_reader.read(&mut buf)?;
+    let buf = &buf[0..read];
     let packet = Packet::new(&buf);
     let msg_type = packet.payload[0];
     debug!("Msg type: {:?}", MSG_TYPE::from(msg_type));
 
-    let (header, tail) = packet.payload.split_at(17);
-    debug!("head length: {}", header.len());
-    // let mut kex_algorithms = String::new();
-    // let mut tail_reader = Cursor::new(&tail);
-    // tail_reader.read_line(&mut kex_algorithms)?;
-    debug!("Kex algorithms: {}", String::from_utf8_lossy(&tail));
-    debug!("{:?}", &tail[0..5]);
+    let (_, buf) = packet.payload.split_at(17);
+    let (algorithms, buf) = consume_string(buf);
+    debug!("Kex algorithms: {}", String::from_utf8(algorithms.to_vec())?);
+    let (algorithms, buf) = consume_string(buf);
+    debug!("server_host_key_algorithms: {}", String::from_utf8(algorithms.to_vec())?);
+    let (algorithms, buf) = consume_string(buf);
+    debug!("encryption_algorithms_client_to_server: {}", String::from_utf8(algorithms.to_vec())?);
+    let (algorithms, buf) = consume_string(buf);
+    debug!("encryption_algorithms_server_to_client: {}", String::from_utf8(algorithms.to_vec())?);
+    let (algorithms, buf) = consume_string(buf);
+    debug!("mac_algorithms_client_to_server: {}", String::from_utf8(algorithms.to_vec())?);
+    let (algorithms, buf) = consume_string(buf);
+    debug!("mac_algorithms_server_to_client: {}", String::from_utf8(algorithms.to_vec())?);
+    let (algorithms, buf) = consume_string(buf);
+    debug!("compression_algorithms_client_to_server: {}", String::from_utf8(algorithms.to_vec())?);
+    let (algorithms, buf) = consume_string(buf);
+    debug!("compression_algorithms_server_to_client: {}", String::from_utf8(algorithms.to_vec())?);
+    let (algorithms, buf) = consume_string(buf);
+    debug!("languages_client_to_server: {}", String::from_utf8(algorithms.to_vec())?);
+    let (algorithms, buf) = consume_string(buf);
+    debug!("languages_server_to_client: {}", String::from_utf8(algorithms.to_vec())?);
+
+    // let (_, tail) = packet.payload.split_at(17);
+    // let str_length = BigEndian::read_u32(&tail[0..4]) as usize;
+    // trace!("Kex algorithm string length: {}", str_length);
+    // let kex_algorithms = &tail[4..str_length + 4];
+    // debug!("Kex algorithms: {}", String::from_utf8(kex_algorithms.to_vec())?);
+
+    // let (_, tail) = tail.split_at(str_length + 4);
+    // let str_length = BigEndian::read_u32(&tail[0..4]) as usize;
+    // trace!("Server host key algorithm string length: {}", str_length);
+    // let server_host_key_algorithms = &tail[4..str_length + 4];
+    // debug!("Server host key algorithms: {}", String::from_utf8(server_host_key_algorithms.to_vec())?);
+
+    // let (_, tail) = tail.split_at(str_length + 4);
+    // let str_length = BigEndian::read_u32(&tail[0..4]) as usize;
+    // trace!("Enccs string length: {}", str_length);
+    // let enc_client_server = &tail[4..str_length + 4];
+    // debug!("Enccs algorithms: {}", String::from_utf8(enc_client_server.to_vec())?);
 
     Ok(())
+}
+
+fn consume_string(buf: &[u8]) -> &[u8] {
+    let str_length = BigEndian::read_u32(buf) as usize;
+    trace!("String length: {}", str_length);
+    let name_list = &buf[4..str_length + 4];
+    let (_, tail) = buf.split_at(str_length + 4);
+    (name_list, tail)
 }
 
 #[cfg(test)]
