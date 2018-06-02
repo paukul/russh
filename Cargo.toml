@@ -12,3 +12,6 @@ name = "russh"
 path = "src/bin.rs"
 
 [dependencies]
+log = "~0.4.1"
+env_logger = "~0.5.10"
+failure = "*"
