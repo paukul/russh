@@ -3,6 +3,7 @@ extern crate failure;
 extern crate byteorder;
 #[macro_use] extern crate log;
 
+use std::io::Cursor;
 use std::io::prelude::*;
 use std::io::BufReader;
 use std::net::TcpStream;
@@ -96,6 +97,15 @@ pub fn connect(host: &str, port: u16) -> Result<(), Error> {
     let packet = Packet::new(&buf);
     let msg_type = packet.payload[0];
     debug!("Msg type: {:?}", MSG_TYPE::from(msg_type));
+
+    let (header, tail) = packet.payload.split_at(17);
+    debug!("head length: {}", header.len());
+    // let mut kex_algorithms = String::new();
+    // let mut tail_reader = Cursor::new(&tail);
+    // tail_reader.read_line(&mut kex_algorithms)?;
+    debug!("Kex algorithms: {}", String::from_utf8_lossy(&tail));
+    debug!("{:?}", &tail[0..5]);
+
     Ok(())
 }
 
