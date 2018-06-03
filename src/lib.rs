@@ -94,31 +94,31 @@ pub fn connect(host: &str, port: u16) -> Result<(), Error> {
 
     let mut buf = [0; MAX_PACKET_SIZE];
     let read = raw_reader.read(&mut buf)?;
-    let buf = &buf[0..read];
+    let buf = &buf[0..=read];
     let packet = Packet::new(&buf);
     let msg_type = packet.payload[0];
     debug!("Msg type: {:?}", MSG_TYPE::from(msg_type));
 
-    let (_, buf) = packet.payload.split_at(17);
-    let (algorithms, buf) = consume_string(buf);
+    let (_, mut buf) = packet.payload.split_at(17);
+    let mut algorithms = consume_string(&mut buf);
     debug!("Kex algorithms: {}", String::from_utf8(algorithms.to_vec())?);
-    let (algorithms, buf) = consume_string(buf);
+    algorithms = consume_string(&mut buf);
     debug!("server_host_key_algorithms: {}", String::from_utf8(algorithms.to_vec())?);
-    let (algorithms, buf) = consume_string(buf);
+    algorithms = consume_string(&mut buf);
     debug!("encryption_algorithms_client_to_server: {}", String::from_utf8(algorithms.to_vec())?);
-    let (algorithms, buf) = consume_string(buf);
+    algorithms = consume_string(&mut buf);
     debug!("encryption_algorithms_server_to_client: {}", String::from_utf8(algorithms.to_vec())?);
-    let (algorithms, buf) = consume_string(buf);
+    algorithms = consume_string(&mut buf);
     debug!("mac_algorithms_client_to_server: {}", String::from_utf8(algorithms.to_vec())?);
-    let (algorithms, buf) = consume_string(buf);
+    algorithms = consume_string(&mut buf);
     debug!("mac_algorithms_server_to_client: {}", String::from_utf8(algorithms.to_vec())?);
-    let (algorithms, buf) = consume_string(buf);
+    algorithms = consume_string(&mut buf);
     debug!("compression_algorithms_client_to_server: {}", String::from_utf8(algorithms.to_vec())?);
-    let (algorithms, buf) = consume_string(buf);
+    algorithms = consume_string(&mut buf);
     debug!("compression_algorithms_server_to_client: {}", String::from_utf8(algorithms.to_vec())?);
-    let (algorithms, buf) = consume_string(buf);
+    algorithms = consume_string(&mut buf);
     debug!("languages_client_to_server: {}", String::from_utf8(algorithms.to_vec())?);
-    let (algorithms, buf) = consume_string(buf);
+    algorithms = consume_string(&mut buf);
     debug!("languages_server_to_client: {}", String::from_utf8(algorithms.to_vec())?);
 
     // let (_, tail) = packet.payload.split_at(17);
@@ -142,12 +142,13 @@ pub fn connect(host: &str, port: u16) -> Result<(), Error> {
     Ok(())
 }
 
-fn consume_string(buf: &[u8]) -> &[u8] {
+fn consume_string<'a>(buf: &mut &'a[u8]) -> &'a[u8] {
     let str_length = BigEndian::read_u32(buf) as usize;
     trace!("String length: {}", str_length);
     let name_list = &buf[4..str_length + 4];
-    let (_, tail) = buf.split_at(str_length + 4);
-    (name_list, tail)
+    
+    *buf = &buf[str_length + 4..];
+    name_list
 }
 
 #[cfg(test)]
