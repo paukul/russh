@@ -11,6 +11,8 @@ use std::str;
 use failure::Error;
 use byteorder::{ByteOrder, BigEndian};
 
+mod packet;
+
 // SSH_MSG_DISCONNECT             1
 // SSH_MSG_IGNORE                 2
 // SSH_MSG_UNIMPLEMENTED          3
@@ -61,15 +63,16 @@ impl Packet {
 
 impl From<u8> for MSG_TYPE {
     fn from(n: u8) -> Self {
+        use self::MSG_TYPE::*;
         match n {
-            1 => MSG_TYPE::SSH_MSG_DISCONNECT,
-            2 => MSG_TYPE::SSH_MSG_IGNORE,
-            3 => MSG_TYPE::SSH_MSG_UNIMPLEMENTED,
-            4 => MSG_TYPE::SSH_MSG_DEBUG,
-            5 => MSG_TYPE::SSH_MSG_SERVICE_REQUEST,
-            6 => MSG_TYPE::SSH_MSG_SERVICE_ACCEPT,
-            20 => MSG_TYPE::SSH_MSG_KEXINIT,
-            21 => MSG_TYPE::SSH_MSG_NEWKEYS,
+            1 => SSH_MSG_DISCONNECT,
+            2 => SSH_MSG_IGNORE,
+            3 => SSH_MSG_UNIMPLEMENTED,
+            4 => SSH_MSG_DEBUG,
+            5 => SSH_MSG_SERVICE_REQUEST,
+            6 => SSH_MSG_SERVICE_ACCEPT,
+            20 => SSH_MSG_KEXINIT,
+            21 => SSH_MSG_NEWKEYS,
             _ => unreachable!()
         }
     }
