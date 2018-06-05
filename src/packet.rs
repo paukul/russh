@@ -3,6 +3,8 @@ use byteorder::{BigEndian, ReadBytesExt, WriteBytesExt};
 use failure::Error;
 use super::MSG_TYPE;
 
+// const MAX_PACKET_SIZE: usize = 35000;
+
 pub struct Packet {
   raw: Vec<u8>,
   padding_length: u8,
@@ -34,6 +36,24 @@ impl Packet {
   pub fn msg_type(self) -> MSG_TYPE {
     trace!("Msg Type: {}", self.raw[5]);
     MSG_TYPE::from(self.raw[5])
+  }
+
+  pub fn discard(&mut self, len: usize) -> Result<(), Error> {
+    let mut buf = Vec::with_capacity(len);
+    let read = self.read(&mut buf)?;
+    if read == len {
+      Ok(())
+    } else {
+      Err(io::Error::new(io::ErrorKind::UnexpectedEof, "packet end reached").into())
+    }
+  }
+
+  pub fn read_str(&mut self) -> io::Result<Vec<u8>> {
+    let str_len = self.read_u32::<BigEndian>()? as usize;
+    trace!("String length: {}", str_len);
+    let mut buf = Vec::with_capacity(str_len);
+    self.read_exact(&mut buf)?;
+    Ok(buf)
   }
 }
 

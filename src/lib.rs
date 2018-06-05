@@ -55,7 +55,6 @@ impl From<u8> for MSG_TYPE {
 }
 
 pub const VERSION: &str = "SSH-2.0-russh_0.1";
-const MAX_PACKET_SIZE: usize = 35000;
 
 pub fn connect(host: &str, port: u16) -> Result<(), Error> {
     let socket_address = format!("{}:{}", host, port);
@@ -69,8 +68,11 @@ pub fn connect(host: &str, port: u16) -> Result<(), Error> {
     stream.flush()?;
 
     let mut packet = Packet::read_from(&mut reader)?;
-    debug!("Msg type: {:?}", packet.msg_type());
+    let msg_type = packet.msg_type();
+    debug!("Msg type: {:?}", msg_type);
+    let _ = packet.discard(16)?;
 
+    debug!("Kex algos: {}", String::from_utf8(packet.read_str()?)?);
     // let (_, mut buf) = packet.payload.split_at(17);
     // let mut algorithms = consume_string(&mut buf);
     // debug!("Kex algorithms: {}", String::from_utf8(algorithms.to_vec())?);
