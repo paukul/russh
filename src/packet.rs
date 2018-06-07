@@ -7,7 +7,9 @@ use super::MSG_TYPE;
 
 pub struct Packet {
   raw: Vec<u8>,
+  #[allow(dead_code)]
   padding_length: u8,
+  #[allow(dead_code)]
   payload_length: usize,
   pos: usize
 }
@@ -16,7 +18,7 @@ impl Packet {
   pub fn read_from<R: io::Read>(stream: &mut R) -> Result<Packet, Error> {
     let packet_length = stream.read_u32::<BigEndian>()? as usize;
     let mut raw = Vec::with_capacity(packet_length);
-    &raw.write_u32::<BigEndian>(packet_length as u32);
+    raw.write_u32::<BigEndian>(packet_length as u32)?;
     let read = stream.take(packet_length as u64).read_to_end(&mut raw)?;
     let padding_length = raw[4];
     let payload_length = packet_length - usize::from(padding_length) - 1;
@@ -27,46 +29,36 @@ impl Packet {
           raw,
           padding_length,
           payload_length,
-          pos: 5
+          pos: 6
         }
       )
     }
   }
 
-  pub fn msg_type(self) -> MSG_TYPE {
+  pub fn msg_type(&self) -> MSG_TYPE {
     trace!("Msg Type: {}", self.raw[5]);
     MSG_TYPE::from(self.raw[5])
   }
 
   pub fn discard(&mut self, len: usize) -> Result<(), Error> {
-    let mut buf = Vec::with_capacity(len);
-    let read = self.read(&mut buf)?;
-    if read == len {
-      Ok(())
-    } else {
-      Err(io::Error::new(io::ErrorKind::UnexpectedEof, "packet end reached").into())
-    }
+    let mut buf = Vec::new();
+    self.take(len as u64).read_to_end(&mut buf)?;
+    Ok(())
   }
 
   pub fn read_str(&mut self) -> io::Result<Vec<u8>> {
     let str_len = self.read_u32::<BigEndian>()? as usize;
-    trace!("String length: {}", str_len);
     let mut buf = Vec::with_capacity(str_len);
-    self.read_exact(&mut buf)?;
+    self.take(str_len as u64).read_to_end(&mut buf)?;
     Ok(buf)
   }
 }
 
 impl Read for Packet {
   fn read(&mut self, buf: &mut [u8]) -> io::Result<usize> {
-    let read_to = self.pos + buf.len();
-    if read_to > self.payload_length {
-      Err(io::Error::new(io::ErrorKind::UnexpectedEof, "packet end reached").into())
-    } else {
-      let mut reader = &self.raw[self.pos..read_to];
-      let read = reader.read(buf)?;
-      self.pos = self.pos + read - 1;
-      Ok(read)
-    }
+    let mut reader = &self.raw[self.pos..];
+    let read = reader.read(buf)?;
+    self.pos = self.pos + read;
+    Ok(read)
   }
 }

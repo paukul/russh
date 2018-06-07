@@ -9,7 +9,7 @@ use std::io::BufReader;
 use std::net::TcpStream;
 use std::str;
 use failure::Error;
-use byteorder::{ByteOrder, BigEndian};
+// use byteorder::{ByteOrder, BigEndian};
 
 mod packet;
 
@@ -70,9 +70,9 @@ pub fn connect(host: &str, port: u16) -> Result<(), Error> {
     let mut packet = Packet::read_from(&mut reader)?;
     let msg_type = packet.msg_type();
     debug!("Msg type: {:?}", msg_type);
-    let _ = packet.discard(16)?;
+    packet.discard(16)?;
 
-    debug!("Kex algos: {}", String::from_utf8(packet.read_str()?)?);
+    debug!("Kex algos: {:?}", String::from_utf8(packet.read_str()?)?);
     // let (_, mut buf) = packet.payload.split_at(17);
     // let mut algorithms = consume_string(&mut buf);
     // debug!("Kex algorithms: {}", String::from_utf8(algorithms.to_vec())?);
@@ -116,14 +116,14 @@ pub fn connect(host: &str, port: u16) -> Result<(), Error> {
     Ok(())
 }
 
-fn consume_string<'a>(buf: &mut &'a[u8]) -> &'a[u8] {
-    let str_length = BigEndian::read_u32(buf) as usize;
-    trace!("String length: {}", str_length);
-    let name_list = &buf[4..str_length + 4];
+// fn consume_string<'a>(buf: &mut &'a[u8]) -> &'a[u8] {
+//     let str_length = BigEndian::read_u32(buf) as usize;
+//     trace!("String length: {}", str_length);
+//     let name_list = &buf[4..str_length + 4];
     
-    *buf = &buf[str_length + 4..];
-    name_list
-}
+//     *buf = &buf[str_length + 4..];
+//     name_list
+// }
 
 #[cfg(test)]
 mod tests {
