@@ -48,8 +48,11 @@ impl Packet {
 
   pub fn read_str(&mut self) -> io::Result<Vec<u8>> {
     let str_len = self.read_u32::<BigEndian>()? as usize;
+    trace!("String Length: {}", str_len);
     let mut buf = Vec::with_capacity(str_len);
-    self.take(str_len as u64).read_to_end(&mut buf)?;
+    if str_len > 0 {
+      self.take(str_len as u64).read_to_end(&mut buf)?;
+    }
     Ok(buf)
   }
 }
@@ -57,8 +60,8 @@ impl Packet {
 impl Read for Packet {
   fn read(&mut self, buf: &mut [u8]) -> io::Result<usize> {
     let mut reader = &self.raw[self.pos..];
-    let read = reader.read(buf)?;
-    self.pos = self.pos + read;
-    Ok(read)
+    let n = reader.read(buf)?;
+    self.pos += n;
+    Ok(n)
   }
 }

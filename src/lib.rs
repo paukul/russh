@@ -72,58 +72,18 @@ pub fn connect(host: &str, port: u16) -> Result<(), Error> {
     debug!("Msg type: {:?}", msg_type);
     packet.discard(16)?;
 
-    debug!("Kex algos: {:?}", String::from_utf8(packet.read_str()?)?);
-    // let (_, mut buf) = packet.payload.split_at(17);
-    // let mut algorithms = consume_string(&mut buf);
-    // debug!("Kex algorithms: {}", String::from_utf8(algorithms.to_vec())?);
-    // algorithms = consume_string(&mut buf);
-    // debug!("server_host_key_algorithms: {}", String::from_utf8(algorithms.to_vec())?);
-    // algorithms = consume_string(&mut buf);
-    // debug!("encryption_algorithms_client_to_server: {}", String::from_utf8(algorithms.to_vec())?);
-    // algorithms = consume_string(&mut buf);
-    // debug!("encryption_algorithms_server_to_client: {}", String::from_utf8(algorithms.to_vec())?);
-    // algorithms = consume_string(&mut buf);
-    // debug!("mac_algorithms_client_to_server: {}", String::from_utf8(algorithms.to_vec())?);
-    // algorithms = consume_string(&mut buf);
-    // debug!("mac_algorithms_server_to_client: {}", String::from_utf8(algorithms.to_vec())?);
-    // algorithms = consume_string(&mut buf);
-    // debug!("compression_algorithms_client_to_server: {}", String::from_utf8(algorithms.to_vec())?);
-    // algorithms = consume_string(&mut buf);
-    // debug!("compression_algorithms_server_to_client: {}", String::from_utf8(algorithms.to_vec())?);
-    // algorithms = consume_string(&mut buf);
-    // debug!("languages_client_to_server: {}", String::from_utf8(algorithms.to_vec())?);
-    // algorithms = consume_string(&mut buf);
-    // debug!("languages_server_to_client: {}", String::from_utf8(algorithms.to_vec())?);
-
-    // let (_, tail) = packet.payload.split_at(17);
-    // let str_length = BigEndian::read_u32(&tail[0..4]) as usize;
-    // trace!("Kex algorithm string length: {}", str_length);
-    // let kex_algorithms = &tail[4..str_length + 4];
-    // debug!("Kex algorithms: {}", String::from_utf8(kex_algorithms.to_vec())?);
-
-    // let (_, tail) = tail.split_at(str_length + 4);
-    // let str_length = BigEndian::read_u32(&tail[0..4]) as usize;
-    // trace!("Server host key algorithm string length: {}", str_length);
-    // let server_host_key_algorithms = &tail[4..str_length + 4];
-    // debug!("Server host key algorithms: {}", String::from_utf8(server_host_key_algorithms.to_vec())?);
-
-    // let (_, tail) = tail.split_at(str_length + 4);
-    // let str_length = BigEndian::read_u32(&tail[0..4]) as usize;
-    // trace!("Enccs string length: {}", str_length);
-    // let enc_client_server = &tail[4..str_length + 4];
-    // debug!("Enccs algorithms: {}", String::from_utf8(enc_client_server.to_vec())?);
-
+    debug!("Kex   : {:?}", String::from_utf8(packet.read_str()?)?);
+    debug!("SHK   : {:?}", String::from_utf8(packet.read_str()?)?);
+    debug!("Enc CS: {:?}", String::from_utf8(packet.read_str()?)?);
+    debug!("Enc SC: {:?}", String::from_utf8(packet.read_str()?)?);
+    debug!("Mac CS: {:?}", String::from_utf8(packet.read_str()?)?);
+    debug!("Mac SC: {:?}", String::from_utf8(packet.read_str()?)?);
+    debug!("Com CS: {:?}", String::from_utf8(packet.read_str()?)?);
+    debug!("Com SC: {:?}", String::from_utf8(packet.read_str()?)?);
+    debug!("Lng CS: {:?}", String::from_utf8(packet.read_str()?)?);
+    debug!("Lng SC: {:?}", String::from_utf8(packet.read_str()?)?);
     Ok(())
 }
-
-// fn consume_string<'a>(buf: &mut &'a[u8]) -> &'a[u8] {
-//     let str_length = BigEndian::read_u32(buf) as usize;
-//     trace!("String length: {}", str_length);
-//     let name_list = &buf[4..str_length + 4];
-    
-//     *buf = &buf[str_length + 4..];
-//     name_list
-// }
 
 #[cfg(test)]
 mod tests {
