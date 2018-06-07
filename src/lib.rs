@@ -72,16 +72,16 @@ pub fn connect(host: &str, port: u16) -> Result<(), Error> {
     debug!("Msg type: {:?}", msg_type);
     packet.discard(16)?;
 
-    debug!("Kex   : {:?}", String::from_utf8(packet.read_str()?)?);
-    debug!("SHK   : {:?}", String::from_utf8(packet.read_str()?)?);
-    debug!("Enc CS: {:?}", String::from_utf8(packet.read_str()?)?);
-    debug!("Enc SC: {:?}", String::from_utf8(packet.read_str()?)?);
-    debug!("Mac CS: {:?}", String::from_utf8(packet.read_str()?)?);
-    debug!("Mac SC: {:?}", String::from_utf8(packet.read_str()?)?);
-    debug!("Com CS: {:?}", String::from_utf8(packet.read_str()?)?);
-    debug!("Com SC: {:?}", String::from_utf8(packet.read_str()?)?);
-    debug!("Lng CS: {:?}", String::from_utf8(packet.read_str()?)?);
-    debug!("Lng SC: {:?}", String::from_utf8(packet.read_str()?)?);
+    debug!("Kex   : {:?}", packet.read_str()?);
+    debug!("SHK   : {:?}", packet.read_str()?);
+    debug!("Enc CS: {:?}", packet.read_str()?);
+    debug!("Enc SC: {:?}", packet.read_str()?);
+    debug!("Mac CS: {:?}", packet.read_str()?);
+    debug!("Mac SC: {:?}", packet.read_str()?);
+    debug!("Com CS: {:?}", packet.read_str()?);
+    debug!("Com SC: {:?}", packet.read_str()?);
+    debug!("Lng CS: {:?}", packet.read_str()?);
+    debug!("Lng SC: {:?}", packet.read_str()?);
     Ok(())
 }
 

@@ -22,6 +22,9 @@ impl Packet {
     let read = stream.take(packet_length as u64).read_to_end(&mut raw)?;
     let padding_length = raw[4];
     let payload_length = packet_length - usize::from(padding_length) - 1;
+    let initial_pos = 6;
+    trace!("Payload length: {}", payload_length);
+    trace!("Initial packet pos: {}", initial_pos);
     if read < packet_length {
       Err(io::Error::new(io::ErrorKind::BrokenPipe, "broken stream").into())
     } else {
@@ -29,7 +32,7 @@ impl Packet {
           raw,
           padding_length,
           payload_length,
-          pos: 6
+          pos: initial_pos
         }
       )
     }
@@ -42,18 +45,19 @@ impl Packet {
 
   pub fn discard(&mut self, len: usize) -> Result<(), Error> {
     let mut buf = Vec::new();
+    trace!("Discarding {} bytes", len);
     self.take(len as u64).read_to_end(&mut buf)?;
     Ok(())
   }
 
-  pub fn read_str(&mut self) -> io::Result<Vec<u8>> {
+  pub fn read_str(&mut self) -> Result<String, Error> {
     let str_len = self.read_u32::<BigEndian>()? as usize;
     trace!("String Length: {}", str_len);
     let mut buf = Vec::with_capacity(str_len);
     if str_len > 0 {
       self.take(str_len as u64).read_to_end(&mut buf)?;
     }
-    Ok(buf)
+    Ok(String::from_utf8(buf)?)
   }
 }
 
@@ -62,6 +66,7 @@ impl Read for Packet {
     let mut reader = &self.raw[self.pos..];
     let n = reader.read(buf)?;
     self.pos += n;
+    trace!("packet pos: {}", self.pos);
     Ok(n)
   }
 }
